@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <defs>
+    <g id="star8d">
+      <path d="M0,-60 L17,-17 L60,0 L17,17 L0,60 L-17,17 L-60,0 L-17,-17 Z" fill="none" stroke="#C9A84C" stroke-width="1.2"/>
+      <path d="M-42,-42 L42,-42 L42,42 L-42,42 Z" fill="none" stroke="#C9A84C" stroke-width="0.7" transform="rotate(45)"/>
+      <circle r="6" fill="none" stroke="#FAF7F0" stroke-width="0.8"/>
+    </g>
+  </defs>
+  <g opacity="0.6">
+    <use href="#star8d" x="120" y="120"/>
+    <use href="#star8d" x="360" y="120"/>
+    <use href="#star8d" x="120" y="360"/>
+    <use href="#star8d" x="360" y="360"/>
+    <use href="#star8d" x="240" y="240"/>
+    <use href="#star8d" x="0"   y="0"/>
+    <use href="#star8d" x="480" y="0"/>
+    <use href="#star8d" x="0"   y="480"/>
+    <use href="#star8d" x="480" y="480"/>
+    <use href="#star8d" x="0"   y="240"/>
+    <use href="#star8d" x="480" y="240"/>
+    <use href="#star8d" x="240" y="0"/>
+    <use href="#star8d" x="240" y="480"/>
+  </g>
+</svg>

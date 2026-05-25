@@ -1,0 +1,55 @@
+# NOBTY backend on Fly.io — PocketBase + WebAuthn sidecar + Push sidecar
+# in a single VM (cf. scripts/start-prod.sh).
+#
+# Avant `fly launch` :
+#   1. fly volumes create pb_data --region cdg --size 1
+#   2. fly secrets set \
+#        VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:contact@REPLACE_ME \
+#        WEBAUTHN_RP_ID=REPLACE_ME.fly.dev WEBAUTHN_ORIGIN=https://REPLACE_ME.vercel.app \
+#        WEBAUTHN_RP_NAME=NOBTY
+#      (et au besoin ANTHROPIC_API_KEY / TWILIO_* / VONAGE_*)
+#   3. fly deploy
+app            = "REPLACE_ME"          # ex: "nobty-backend"
+primary_region = "cdg"                 # Paris ; ajustez selon vos utilisateurs
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Surchargés par `fly secrets set` au besoin ; valeurs par défaut sûres ici.
+  PUSH_PORT        = "4568"
+  WEBAUTHN_PORT    = "4567"
+  WEBAUTHN_VERIFIER_URL = "http://127.0.0.1:4567"
+  PUSH_SENDER_URL       = "http://127.0.0.1:4568"
+  PB_DATA          = "/pb_data"
+
+[mounts]
+  source      = "pb_data"
+  destination = "/pb_data"
+  initial_size = "1gb"
+
+[http_service]
+  internal_port = 8090
+  force_https   = true
+  auto_stop_machines  = "off"   # PocketBase doit rester up pour le realtime SSE
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type       = "requests"
+    hard_limit = 400
+    soft_limit = 200
+
+  [[http_service.checks]]
+    interval     = "30s"
+    timeout      = "5s"
+    grace_period = "15s"
+    method       = "GET"
+    path         = "/api/nobty/health"
+
+[[vm]]
+  size       = "shared-cpu-1x"
+  memory_mb  = 512
+  cpu_kind   = "shared"
+  cpus       = 1

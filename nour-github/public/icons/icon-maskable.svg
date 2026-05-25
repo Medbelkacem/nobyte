@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Version maskable : safe zone = cercle de rayon 256 centré (40% padding) -->
+  <defs>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2D6A4F"/>
+      <stop offset="100%" stop-color="#143727"/>
+    </linearGradient>
+    <linearGradient id="gold2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E5C977"/>
+      <stop offset="100%" stop-color="#B6953D"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#g2)"/>
+  <g transform="translate(256,256)">
+    <path d="M0,-110 L31,-31 L110,0 L31,31 L0,110 L-31,31 L-110,0 L-31,-31 Z"
+          fill="url(#gold2)" stroke="#C9A84C" stroke-width="3"/>
+    <circle r="6" fill="#FAF7F0"/>
+  </g>
+</svg>

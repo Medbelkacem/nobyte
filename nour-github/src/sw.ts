@@ -1,0 +1,125 @@
+/// <reference lib="webworker" />
+/**
+ * NOBTY — Service Worker custom (vite-plugin-pwa, strategies: injectManifest).
+ *
+ * Responsabilités :
+ *   1) Caching offline minimaliste pour les référentiels et les fonts.
+ *   2) Réception des notifications Web Push envoyées par le sidecar
+ *      `scripts/push-sender.mjs` (relai depuis PocketBase).
+ *   3) Routing du clic vers la bonne page de l'app.
+ *
+ * Le manifest généré par Workbox est référencé pour conserver la mécanique
+ * d'auto-update (`registerType: 'autoUpdate'`) ; on ne précache pas
+ * agressivement, on s'en sert juste comme signal de version.
+ */
+
+declare const self: ServiceWorkerGlobalScope;
+
+// Référence au manifest injecté par Workbox (sinon le build se plaint).
+// On l'ignore volontairement à l'exécution.
+// @ts-expect-error : injecté par workbox-build au build
+const _manifest = self.__WB_MANIFEST;
+void _manifest;
+
+const REFS_CACHE  = 'nobty-refs-v1';
+const FONTS_CACHE = 'nobty-fonts-v1';
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      // Purge des anciens caches.
+      const keep = new Set([REFS_CACHE, FONTS_CACHE]);
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => !keep.has(k)).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })(),
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+
+  // Référentiels PocketBase : stale-while-revalidate.
+  const isRef =
+    url.pathname.includes('/collections/wilayas/records') ||
+    url.pathname.includes('/collections/institution_types/records') ||
+    url.pathname.includes('/collections/establishments/records') ||
+    url.pathname.includes('/collections/services/records');
+  if (isRef) {
+    event.respondWith(staleWhileRevalidate(req, REFS_CACHE));
+    return;
+  }
+
+  // Fonts : cache-first long.
+  if (/\.(?:woff2|ttf|otf)$/i.test(url.pathname)) {
+    event.respondWith(cacheFirst(req, FONTS_CACHE));
+    return;
+  }
+});
+
+async function staleWhileRevalidate(req: Request, cacheName: string): Promise<Response> {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  const network = fetch(req)
+    .then((res) => { if (res.ok) cache.put(req, res.clone()); return res; })
+    .catch(() => cached || Response.error());
+  return cached || network;
+}
+
+async function cacheFirst(req: Request, cacheName: string): Promise<Response> {
+  const cache  = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  if (cached) return cached;
+  const res = await fetch(req);
+  if (res.ok) cache.put(req, res.clone());
+  return res;
+}
+
+// =====================================================================
+// Push : payload envoyé par scripts/push-sender.mjs
+//   { title, body, ticket?, notification_id? }
+// =====================================================================
+self.addEventListener('push', (event) => {
+  let data: { title?: string; body?: string; ticket?: string; notification_id?: string } = {};
+  try { data = event.data ? event.data.json() : {}; }
+  catch { data = {}; }
+
+  const title = data.title || 'NOBTY';
+  const body  = data.body  || '';
+  const url   = data.ticket ? `/ticket/${data.ticket}` : '/me/tickets';
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon:  '/icons/icon-192.png',
+      badge: '/icons/icon.svg',
+      tag:   data.notification_id || data.ticket || 'nobty-notif',
+      data:  { url },
+      vibrate: [80, 40, 80],
+    } as NotificationOptions),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    (async () => {
+      const wins = (await self.clients.matchAll({
+        type: 'window', includeUncontrolled: true,
+      })) as WindowClient[];
+      for (const w of wins) {
+        await w.focus();
+        await w.navigate(target);
+        return;
+      }
+      if (self.clients.openWindow) await self.clients.openWindow(target);
+    })(),
+  );
+});

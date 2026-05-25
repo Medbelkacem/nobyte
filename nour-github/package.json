@@ -1,0 +1,53 @@
+{
+  "name": "nobty",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "NOBTY (نُبتي) — PWA citoyenne algérienne de file d'attente virtuelle",
+  "scripts": {
+    "dev": "vite",
+    "dev:all": "concurrently -k -n pb,wa,push,web -c green,magenta,blue,cyan \"pnpm pb:serve\" \"pnpm webauthn:serve\" \"pnpm push:serve\" \"pnpm dev\"",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives",
+    "typecheck": "tsc -b --noEmit",
+    "pb:serve": "pocketbase serve --dir=./pocketbase/pb_data --hooksDir=./pocketbase/pb_hooks --migrationsDir=./pocketbase/pb_migrations --publicDir=./pocketbase/pb_public --http=0.0.0.0:8090",
+    "pb:migrate": "pocketbase migrate up --dir=./pocketbase/pb_data --migrationsDir=./pocketbase/pb_migrations",
+    "pb:reset": "rm -rf ./pocketbase/pb_data && pnpm pb:migrate",
+    "import:osm": "node scripts/import-osm.mjs",
+    "webauthn:serve": "node scripts/webauthn-verifier.mjs",
+    "push:serve": "node scripts/push-sender.mjs",
+    "push:vapid": "npx --yes web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "^10.0.0",
+    "@simplewebauthn/server": "^10.0.0",
+    "clsx": "^2.1.1",
+    "pocketbase": "^0.21.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "tailwind-merge": "^2.5.2",
+    "web-push": "^3.6.7",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.5.0",
+    "@typescript-eslint/parser": "^8.5.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.0.1",
+    "eslint": "^9.10.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "postcss": "^8.4.45",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.6",
+    "vite-plugin-pwa": "^0.20.5",
+    "workbox-window": "^7.1.0"
+  }
+}
